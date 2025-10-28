@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - SecureFile Share{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
+            <span class="badge bg-primary">Welcome, {{ admin_username }}</span>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ total_files }}</h4>
+                                <p>Total Files</p>
+                            </div>
+                            <i class="fas fa-file fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ total_storage }}</h4>
+                                <p>Total Storage</p>
+                            </div>
+                            <i class="fas fa-database fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ total_uploads }}</h4>
+                                <p>Total Uploads</p>
+                            </div>
+                            <i class="fas fa-upload fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ active_sessions }}</h4>
+                                <p>Active Sessions</p>
+                            </div>
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Stats -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-secondary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ total_downloads }}</h4>
+                                <p>Total Downloads</p>
+                            </div>
+                            <i class="fas fa-download fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-dark">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ files_today }}</h4>
+                                <p>Files Today</p>
+                            </div>
+                            <i class="fas fa-calendar-day fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-danger">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ total_daily_usage }}</h4>
+                                <p>Daily Usage</p>
+                            </div>
+                            <i class="fas fa-chart-bar fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Near Quota Limit -->
+        {% if users_near_limit %}
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Users Near Daily Quota Limit</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>IP Address</th>
+                                <th>Daily Usage</th>
+                                <th>Percentage</th>
+                                <th>Files Today</th>
+                                <th>Last Activity</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users_near_limit %}
+                            <tr>
+                                <td><code>{{ user.session_id }}</code></td>
+                                <td>{{ user.ip }}</td>
+                                <td>{{ user.daily_used_formatted }}</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-{{ 'danger' if user.percentage > 90 else 'warning' }}" 
+                                             style="width: {{ user.percentage }}%">
+                                            {{ "%.1f"|format(user.percentage) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ user.file_count }}</td>
+                                <td>
+                                    {% if user.last_activity != 'Unknown' %}
+                                        {{ user.last_activity.strftime('%H:%M') }}
+                                    {% else %}
+                                        Unknown
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button onclick="resetQuota('{{ user.session_id }}')" 
+                                            class="btn btn-sm btn-outline-secondary" 
+                                            title="Reset Quota">
+                                        <i class="fas fa-redo"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Files -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Files (Last 24 Hours)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>File ID</th>
+                                <th>Filename</th>
+                                <th>Size</th>
+                                <th>Uploaded</th>
+                                <th>Expires</th>
+                                <th>Downloads</th>
+                                <th>Session ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file_id, file in file_data.items() %}
+                                {% if (current_time - file.upload_time).days < 1 %}
+                                <tr>
+                                    <td><code>{{ file_id }}</code></td>
+                                    <td title="{{ file.original_name }}">{{ file.original_name[:20] }}{{ '...' if file.original_name|length > 20 else '' }}</td>
+                                    <td>{{ format_file_size(file.file_size) }}</td>
+                                    <td>{{ file.upload_time.strftime('%H:%M') }}</td>
+                                    <td>{{ file.expiry_time.strftime('%m-%d %H:%M') }}</td>
+                                    <td>{{ file.download_count }}</td>
+                                    <td><code>{{ file.session_id[:8] }}</code></td>
+                                </tr>
+                                {% endif %}
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-3">No files uploaded in the last 24 hours</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin_files') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-list"></i> View All Files
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <button onclick="location.reload()" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-sync"></i> Refresh Data
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <button onclick="exportData()" class="btn btn-outline-success w-100">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function resetQuota(sessionId) {
+    if (confirm('Are you sure you want to reset the daily quota for this user?')) {
+        window.location.href = `/admin/reset-quota/${sessionId}`;
+    }
+}
+
+function exportData() {
+    // Simple data export functionality
+    const data = {
+        totalFiles: {{ total_files }},
+        totalStorage: '{{ total_storage }}',
+        totalUploads: {{ total_uploads }},
+        activeSessions: {{ active_sessions }},
+        exportTime: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `admin-dashboard-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

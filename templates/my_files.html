@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}My Files - SecureFile Share{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-files"></i> My Files</h4>
+                <span class="badge bg-light text-dark">{{ files|length }} files</span>
+            </div>
+            <div class="card-body">
+                <!-- Quota Info -->
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Daily Upload Quota:</span>
+                        <strong>{{ daily_quota.used_formatted }} / {{ daily_quota.limit_formatted }}</strong>
+                    </div>
+                    <div class="progress quota-meter mt-2">
+                        <div class="progress-bar bg-{{ 'warning' if daily_quota.percentage > 70 else 'success' }}" 
+                             style="width: {{ daily_quota.percentage }}%">
+                            {{ "%.1f"|format(daily_quota.percentage) }}%
+                        </div>
+                    </div>
+                    <small class="text-muted">{{ daily_quota.remaining_formatted }} remaining today</small>
+                </div>
+
+                {% if files %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Filename</th>
+                                <th>Size</th>
+                                <th>Uploaded</th>
+                                <th>Downloads</th>
+                                <th>Expires In</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file_id, file in files.items() %}
+                            <tr id="row-{{ file_id }}" class="animate__animated">
+                                <td>
+                                    <i class="fas fa-file me-2"></i>
+                                    <span title="{{ file.original_name }}">{{ file.original_name[:30] }}{{ '...' if file.original_name|length > 30 }}</span>
+                                </td>
+                                <td>{{ format_file_size(file.file_size) }}</td>
+                                <td>{{ file.upload_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ file.download_count }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">{{ file.time_remaining }}</span>
+                                        <div class="progress expiry-progress flex-grow-1" style="width: 80px;">
+                                            <div class="progress-bar bg-{{ 'warning' if file.expiry_percentage > 70 else 'success' }}" 
+                                                 style="width: {{ file.expiry_percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('download_file', file_id=file_id) }}" 
+                                           class="btn btn-outline-primary" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button onclick="copyDownloadLink('{{ file_id }}', '{{ file.original_name }}')" 
+                                                class="btn btn-outline-info" title="Copy Download Link">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                        <button onclick="deleteFile('{{ file_id }}', '{{ file.original_name }}')" 
+                                                class="btn btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <h5>No files uploaded yet</h5>
+                    <p class="text-muted">Upload your first file to get started!</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload Files
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script>
+function copyDownloadLink(fileId, filename) {
+    const downloadUrl = window.location.origin + "{{ url_for('download_file', file_id='') }}" + fileId;
+    
+    navigator.clipboard.writeText(downloadUrl).then(function() {
+        Swal.fire({
+            title: '✅ Link Copied!',
+            html: `<div style="text-align: center;">
+                     <div style="font-size: 48px;">📋</div>
+                     <h5 style="color: #28a745;">Download link copied to clipboard!</h5>
+                     <p><b>"${filename}"</b> download link is ready to share.</p>
+                     <div class="mt-3 p-2 bg-light rounded">
+                         <small class="text-muted">${downloadUrl.substring(0, 50)}...</small>
+                     </div>
+                   </div>`,
+            icon: 'success',
+            confirmButtonColor: '#28a745',
+            confirmButtonText: 'OK',
+            timer: 3000,
+            timerProgressBar: true,
+            showClass: {
+                popup: 'animate__animated animate__bounceIn'
+            }
+        });
+    }).catch(function(err) {
+        Swal.fire({
+            title: '❌ Copy Failed',
+            text: 'Failed to copy link to clipboard: ' + err,
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    });
+}
+
+function deleteFile(fileId, filename) {
+    Swal.fire({
+        title: 'Are you sure?',
+        html: `Are you sure you want to delete "<b>${filename}</b>"?<br><br>
+               <small class="text-muted">This action cannot be undone.</small>`,
+        icon: 'question',
+        imageUrl: 'https://cdn-icons-png.flaticon.com/512/3096/3096673.png',
+        imageWidth: 80,
+        imageHeight: 80,
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        backdrop: `rgba(240, 15, 83, 0.1)`
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading animation
+            Swal.fire({
+                title: 'Deleting...',
+                html: `<div style="display: flex; align-items: center; justify-content: center;">
+                         <div class="spinner-border text-primary me-3"></div>
+                         <div>
+                             <b>${filename}</b><br>
+                             <small>Please wait...</small>
+                         </div>
+                       </div>`,
+                allowOutsideClick: false,
+                showConfirmButton: false
+            });
+            
+            fetch(`/delete/${fileId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Animation for row removal
+                        const row = document.getElementById(`row-${fileId}`);
+                        if (row) {
+                            row.classList.add('animate__fadeOutLeft');
+                            setTimeout(() => {
+                                row.remove();
+                                
+                                // Check if table is empty
+                                const tbody = document.querySelector('tbody');
+                                if (tbody.children.length === 0) {
+                                    setTimeout(() => location.reload(), 1000);
+                                }
+                            }, 1000);
+                        }
+                        
+                        // Success message with celebration
+                        Swal.fire({
+                            title: '🎉 Success!',
+                            html: `<div style="text-align: center;">
+                                     <div style="font-size: 48px;">✅</div>
+                                     <h4 style="color: #28a745;">File deleted successfully!</h4>
+                                     <p><b>"${filename}"</b> has been removed from your account.</p>
+                                   </div>`,
+                            icon: 'success',
+                            confirmButtonColor: '#28a745',
+                            confirmButtonText: 'Great!',
+                            timer: 5000,
+                            timerProgressBar: true,
+                            showClass: {
+                                popup: 'animate__animated animate__bounceIn'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__bounceOut'
+                            }
+                        });
+                        
+                    } else {
+                        Swal.fire({
+                            title: '❌ Error!',
+                            text: data.error,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        title: '🌐 Network Error!',
+                        text: error,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                });
+        }
+    });
+}
+</script>
+{% endblock %}

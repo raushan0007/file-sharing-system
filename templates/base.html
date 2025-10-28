@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SecureFile Share - 2GB File Uploads{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6a11cb;
+            --primary-dark: #2575fc;
+            --secondary: #ff6b6b;
+            --success: #1dd1a1;
+            --warning: #feca57;
+            --info: #54a0ff;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            --gradient-secondary: linear-gradient(135deg, var(--secondary) 0%, #ff9ff3 100%);
+            --gradient-success: linear-gradient(135deg, var(--success) 0%, #10ac84 100%);
+            --gradient-warning: linear-gradient(135deg, var(--warning) 0%, #ff9f43 100%);
+            --gradient-info: linear-gradient(135deg, var(--info) 0%, #2e86de 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: var(--gradient-primary) !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .navbar-brand i {
+            margin-right: 10px;
+            font-size: 1.7rem;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            margin: 0 5px;
+            border-radius: 20px;
+            padding: 8px 15px !important;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .container {
+            max-width: 1200px;
+        }
+        
+        .alert {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+            color: white;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #1dd1a1 0%, #00d2d3 100%);
+            color: white;
+        }
+        
+        .btn-close {
+            filter: invert(1);
+        }
+        
+        footer {
+            background: var(--gradient-primary) !important;
+            margin-top: 4rem;
+            padding: 1.5rem 0;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            background: var(--gradient-primary);
+            color: white;
+            border-bottom: none;
+            padding: 1.5rem;
+        }
+        
+        .progress-bar-animated {
+            animation: progress-bar-stripes 1s linear infinite;
+        }
+        
+        .file-card {
+            transition: transform 0.2s;
+        }
+        
+        .file-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .quota-meter {
+            height: 25px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .expiry-progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 15px rgba(106, 17, 203, 0.4);
+        }
+        
+        .btn-success {
+            background: var(--gradient-success);
+            border: none;
+            border-radius: 50px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+        
+        .btn-warning {
+            background: var(--gradient-warning);
+            border: none;
+            border-radius: 50px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+        
+        .btn-info {
+            background: var(--gradient-info);
+            border: none;
+            border-radius: 50px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+        
+        .stats-card {
+            text-align: center;
+            padding: 2rem 1rem;
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stats-card i {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stats-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stats-card p {
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+        
+        .stats-1 {
+            background: var(--gradient-primary);
+        }
+        
+        .stats-2 {
+            background: var(--gradient-success);
+        }
+        
+        .stats-3 {
+            background: var(--gradient-warning);
+        }
+        
+        .stats-4 {
+            background: var(--gradient-info);
+        }
+        
+        .file-upload-area {
+            border: 3px dashed #c3cfe2;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+        }
+        
+        .file-upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.02);
+        }
+        
+        .file-upload-area i {
+            font-size: 4rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .attribution {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .attribution a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .attribution a:hover {
+            text-decoration: underline;
+        }
+        
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.8rem;
+        }
+        
+        .feature-1 {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        .feature-2 {
+            background: var(--gradient-success);
+            color: white;
+        }
+        
+        .feature-3 {
+            background: var(--gradient-warning);
+            color: white;
+        }
+        
+        .feature-4 {
+            background: var(--gradient-info);
+            color: white;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.3rem;
+            }
+            
+            .stats-card {
+                margin-bottom: 1rem;
+            }
+            
+            .file-upload-area {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-shield-alt"></i> SecureFile Share
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}"><i class="fas fa-cloud-upload-alt me-1"></i> Upload</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('my_files') }}"><i class="fas fa-file me-1"></i> My Files</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if session.get('admin_logged_in') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            <i class="fas fa-cog me-1"></i> Admin
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_logout') }}"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_login') }}"><i class="fas fa-user-shield me-1"></i> Admin Login</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                            <div>{{ message }}</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+        
+        <!-- Features Section -->
+        <div class="row mt-5">
+            <div class="col-12 text-center mb-4">
+                <h2 class="display-5 fw-bold" style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Why Choose SecureFile Share?</h2>
+                <p class="lead text-muted">The most secure and user-friendly file sharing solution</p>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 border-0 text-center">
+                    <div class="card-body">
+                        <div class="feature-icon feature-1 floating">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h5 class="card-title">Military Grade Security</h5>
+                        <p class="card-text">Your files are encrypted and protected with the latest security protocols.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 border-0 text-center">
+                    <div class="card-body">
+                        <div class="feature-icon feature-2 floating" style="animation-delay: 0.5s;">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h5 class="card-title">Lightning Fast</h5>
+                        <p class="card-text">Upload and download files at maximum speed with our optimized servers.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 border-0 text-center">
+                    <div class="card-body">
+                        <div class="feature-icon feature-3 floating" style="animation-delay: 1s;">
+                            <i class="fas fa-expand"></i>
+                        </div>
+                        <h5 class="card-title">2GB File Size</h5>
+                        <p class="card-text">Share large files up to 2GB without compression or splitting.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 border-0 text-center">
+                    <div class="card-body">
+                        <div class="feature-icon feature-4 floating" style="animation-delay: 1.5s;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h5 class="card-title">Auto Cleanup</h5>
+                        <p class="card-text">Files automatically expire after 7 days to ensure privacy and save space.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-light mt-5 py-4">
+        <div class="container text-center">
+            <p class="mb-2">&copy; 2024 SecureFile Share. Max file size: 2GB. Files auto-delete after 7 days.</p>
+            <div class="attribution">
+                Designed with <i class="fas fa-heart text-danger mx-1"></i> by 
+                <a href="https://www.way4raushan.com/" target="_blank">Raushan Gupta</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

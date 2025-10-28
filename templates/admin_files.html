@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Files - Secure File Share</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .admin-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .session-id {
+            font-family: monospace;
+            font-size: 0.9em;
+            background-color: #f8f9fa;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .file-table th {
+            background-color: #f8f9fa;
+            border-top: none;
+        }
+        .action-btn {
+            margin: 2px;
+            padding: 5px 10px;
+        }
+        .search-box {
+            max-width: 300px;
+        }
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+    </style>
+</head>
+<body>
+    <div class="container admin-container">
+        <div class="header">
+            <h1><i class="fas fa-tools me-2"></i>Admin File Manager</h1>
+            <p class="mb-0">All files and user sessions</p>
+        </div>
+        
+        <div class="content p-4">
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <h3>{{ files|length }}</h3>
+                        <p>Total Files</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <h3>{{ user_sessions|length }}</h3>
+                        <p>Active Sessions</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <h3>{{ (files.values()|sum(attribute='file_size') / 1024 / 1024 / 1024)|round(2) }} GB</h3>
+                        <p>Total Storage</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group search-box">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Search files..." id="searchInput">
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-outline-secondary" id="refreshBtn">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Files Table -->
+            <div class="table-responsive">
+                <table class="table table-hover file-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>File Name</th>
+                            <th>Size</th>
+                            <th>Session ID</th>
+                            <th>Uploaded</th>
+                            <th>Expires</th>
+                            <th>Downloads</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file_id, file_info in files.items() %}
+                        <tr>
+                            <td>
+                                <i class="fas fa-file me-2 text-primary"></i>
+                                {{ file_info.original_name }}
+                            </td>
+                            <td>{{ (file_info.file_size / 1024 / 1024)|round(2) }} MB</td>
+                            <td><span class="session-id">{{ file_info.session_id }}</span></td>
+                            <td>{{ file_info.upload_time.strftime('%m/%d %H:%M') }}</td>
+                            <td>
+                                {% if file_info.expiry_time %}
+                                    {{ file_info.expiry_time.strftime('%m/%d %H:%M') }}
+                                {% else %}
+                                    <span class="text-muted">Never</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary rounded-pill">{{ file_info.download_count }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-primary action-btn download-btn" 
+                                            data-fileid="{{ file_id }}" 
+                                            data-filename="{{ file_info.original_name }}">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success action-btn copy-link-btn" 
+                                            data-fileid="{{ file_id }}">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger action-btn delete-btn" 
+                                            data-fileid="{{ file_id }}" 
+                                            data-filename="{{ file_info.original_name }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="File pagination">
+                <ul class="pagination justify-content-center mt-4">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Next</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Back Button -->
+            <div class="text-center mt-4">
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Main Site
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p class="mb-0 text-muted">Secure File Share &copy; 2023 | Admin Panel</p>
+        </div>
+    </div>
+
+    <!-- Toast for notifications -->
+    <div class="toast-container">
+        <div id="copyToast" class="toast align-items-center text-white bg-success border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>Download link copied to clipboard!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Copy download link functionality
+        document.querySelectorAll('.copy-link-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const fileId = this.getAttribute('data-fileid');
+                // In a real app, this would be the actual download URL
+                const downloadLink = `${window.location.origin}/download/${fileId}`;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(downloadLink).then(() => {
+                    // Show success toast
+                    const toast = new bootstrap.Toast(document.getElementById('copyToast'));
+                    toast.show();
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            });
+        });
+
+        // Download file functionality
+        document.querySelectorAll('.download-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const fileId = this.getAttribute('data-fileid');
+                const fileName = this.getAttribute('data-filename');
+                
+                // In a real app, this would trigger the actual file download
+                // For demo purposes, we'll show an alert
+                alert(`Downloading file: ${fileName}\nFile ID: ${fileId}`);
+                
+                // Simulate download by creating a temporary link
+                const downloadLink = `${window.location.origin}/download/${fileId}`;
+                const link = document.createElement('a');
+                link.href = downloadLink;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.file-table tbody tr');
+            
+            rows.forEach(row => {
+                const fileName = row.cells[0].textContent.toLowerCase();
+                if (fileName.includes(searchText)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Refresh button
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            // In a real app, this would refresh the data
+            // For demo, we'll just show a loading state
+            const icon = this.querySelector('i');
+            icon.classList.add('fa-spin');
+            
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                // Show a temporary message
+                const toast = new bootstrap.Toast(document.getElementById('copyToast'));
+                document.querySelector('.toast-body').innerHTML = '<i class="fas fa-sync-alt me-2"></i>Data refreshed!';
+                document.getElementById('copyToast').classList.remove('bg-success');
+                document.getElementById('copyToast').classList.add('bg-info');
+                toast.show();
+                
+                // Reset toast for next use
+                setTimeout(() => {
+                    document.getElementById('copyToast').classList.remove('bg-info');
+                    document.getElementById('copyToast').classList.add('bg-success');
+                    document.querySelector('.toast-body').innerHTML = '<i class="fas fa-check-circle me-2"></i>Download link copied to clipboard!';
+                }, 2000);
+            }, 1000);
+        });
+
+        // Delete button functionality (with confirmation)
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const fileId = this.getAttribute('data-fileid');
+                const fileName = this.getAttribute('data-filename');
+                
+                if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+                    // In a real app, this would send a delete request to the server
+                    // For demo, we'll just remove the row
+                    this.closest('tr').remove();
+                    
+                    // Show confirmation
+                    const toast = new bootstrap.Toast(document.getElementById('copyToast'));
+                    document.querySelector('.toast-body').innerHTML = `<i class="fas fa-trash me-2"></i>File "${fileName}" deleted!`;
+                    document.getElementById('copyToast').classList.remove('bg-success');
+                    document.getElementById('copyToast').classList.add('bg-danger');
+                    toast.show();
+                    
+                    // Reset toast for next use
+                    setTimeout(() => {
+                        document.getElementById('copyToast').classList.remove('bg-danger');
+                        document.getElementById('copyToast').classList.add('bg-success');
+                        document.querySelector('.toast-body').innerHTML = '<i class="fas fa-check-circle me-2"></i>Download link copied to clipboard!';
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

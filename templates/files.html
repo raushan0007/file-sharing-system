@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Files</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px;
+        }
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .file-table th, .file-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .file-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+        .btn-download {
+            background: #00b894;
+            color: white;
+        }
+        .btn-delete {
+            background: #d63031;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #6c5ce7;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📂 Active Files</h1>
+            <p>Files currently available for download</p>
+        </div>
+        
+        <div class="content">
+            {% if files %}
+            <table class="file-table">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Size</th>
+                        <th>Uploaded</th>
+                        <th>Expires</th>
+                        <th>Downloads</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file_id, file_info in files.items() %}
+                    <tr>
+                        <td>{{ file_info.original_name }}</td>
+                        <td>{{ (file_info.file_size / 1024 / 1024)|round(2) }} MB</td>
+                        <td>{{ file_info.upload_time.strftime('%H:%M %d/%m') }}</td>
+                        <td>{{ file_info.expiry_time.strftime('%H:%M %d/%m') }}</td>
+                        <td>{{ file_info.download_count }}</td>
+                        <td>
+                            <a href="/download/{{ file_id }}" class="btn btn-download">Download</a>
+                            <a href="/delete/{{ file_id }}" class="btn btn-delete">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <h3>📭 No active files</h3>
+                <p>Upload files to see them listed here</p>
+            </div>
+            {% endif %}
+            
+            <a href="/" class="back-btn">← Back to Upload</a>
+        </div>
+    </div>
+</body>
+</html>

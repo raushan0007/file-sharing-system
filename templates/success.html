@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Successful</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #00b894 0%, #00a8ff 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #00b894 0%, #00a8ff 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 40px;
+        }
+        .success-icon {
+            text-align: center;
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        .link-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            word-break: break-all;
+        }
+        .link {
+            color: #00a8ff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .btn {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #00b894;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .copy-btn {
+            background: #00a8ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Upload Successful!</h1>
+        </div>
+        
+        <div class="content">
+            <div class="success-icon">🎉</div>
+            
+            <h3>Your file is ready to share!</h3>
+            
+            <div class="link-container">
+                <strong>Download Link:</strong><br>
+                <a href="{{ download_link }}" class="link" id="downloadLink">{{ download_link }}</a>
+                <button class="copy-btn" onclick="copyToClipboard()">📋 Copy Link</button>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>File Name:</strong><br>
+                    {{ original_name }}
+                </div>
+                <div class="info-item">
+                    <strong>File Size:</strong><br>
+                    {{ (file_size / 1024 / 1024)|round(2) }} MB
+                </div>
+                <div class="info-item">
+                    <strong>Expires On:</strong><br>
+                    {{ expiry_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                </div>
+                <div class="info-item">
+                    <strong>Delete Link:</strong><br>
+                    <a href="{{ delete_link }}" class="link">Delete File</a>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <a href="/" class="btn btn-primary">📤 Upload Another File</a>
+                <a href="/files" class="btn btn-secondary">📂 View All Files</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const link = document.getElementById('downloadLink');
+            const textArea = document.createElement('textarea');
+            textArea.value = link.href;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Link copied to clipboard!');
+        }
+    </script>
+</body>
+</html>
